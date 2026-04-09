@@ -1,3 +1,24 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
 
-@import 'tailwindcss';
+@plugin "daisyui" {
+  themes: night, cmyk;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+@layer base {
+  html, body {
+    @apply min-h-screen font-sans;
+  }
+}
+
+/* Custom scrollbar using Tailwind utilities if needed, or keep simple */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-base-300 rounded-full;
+}
+
