@@ -11,6 +11,8 @@ import {
   AddBookmarkData,
 } from '../components/add-bookmark-modal/add-bookmark-modal.component';
 import { LucideAngularModule } from 'lucide-angular';
+import { AnalyticsComponent } from '../analytics/analytics.component';
+import { AddCategoryModalComponent } from '../components/add-category-modal/add-category-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,76 +24,96 @@ import { LucideAngularModule } from 'lucide-angular';
     BookmarkCardComponent,
     SidebarComponent,
     AddBookmarkModalComponent,
+    AnalyticsComponent,
+    AddCategoryModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex min-h-screen bg-base-200/50">
+    <div class="flex min-h-screen">
       <app-sidebar
         [activeCategory]="activeCategory()"
         [categoryCounts]="categoryCounts()"
+        [categories]="svc.categories()"
+        [currentView]="currentView()"
         [isDark]="isDark()"
         (categoryChange)="setCategory($event)"
+        (viewChange)="currentView.set($event)"
         (addClick)="showModal.set(true)"
+        (importClick)="importFileInput.click()"
         (exportClick)="svc.exportData()"
+        (addCategoryClick)="showCategoryModal.set(true)"
         (themeToggle)="toggleTheme()"
+        (deleteCategory)="onDeleteCategory($event)"
+      />
+
+      <input
+        #importFileInput
+        type="file"
+        accept=".json"
+        class="hidden"
+        (change)="onImportFile($event)"
       />
 
       <main class="flex-1 min-w-0 flex flex-col">
-        <header class="w-full px-4 lg:px-10 py-3">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 class="text-3xl font-black text-base-content tracking-tight mb-1">
-                {{ activeCategory() === 'All' ? 'Your Library' : activeCategory() }}
-              </h1>
-              <p class="text-sm text-base-content/50 font-medium italic">
-                {{ filteredBookmarks().length }} items found
-              </p>
-            </div>
-
-            <div class="form-control">
-              <label
-                class="input input-bordered flex items-center gap-2 focus-within:ring-2 focus-within:ring-primary/20"
-              >
-                <lucide-icon name="search" class="size-4 opacity-50"></lucide-icon>
-                <input
-                  type="search"
-                  class="grow border-none focus:ring-0"
-                  placeholder="Search bookmarks..."
-                  [value]="searchQuery()"
-                  (input)="searchQuery.set($any($event.target).value)"
-                />
-              </label>
-            </div>
-          </div>
-        </header>
-
-        <section class="min-h-screen bg-base-300 graph-pattern p-4 lg:p-10">
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
-            *ngIf="filteredBookmarks().length > 0; else emptyState"
-          >
-            @for (b of filteredBookmarks(); track b.id) {
-              <app-bookmark-card
-                [bookmark]="b"
-                (visit)="onVisit($event)"
-                (delete)="onDelete($event)"
-                (copy)="onCopySuccess($event)"
-              />
-            }
-          </div>
-
-          <ng-template #emptyState>
-            <div
-              class="flex flex-col items-center justify-center py-32 bg-base-100/80 backdrop-blur-sm rounded-3xl border-2 border-dashed border-base-300 text-base-content/30"
-            >
-              <div class="bg-base-200 p-6 rounded-full mb-4">
-                <lucide-icon name="search-x" class="size-12"></lucide-icon>
+        @if (currentView() === 'library') {
+          <header class="w-full px-4 lg:px-10 py-3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h1 class="text-3xl font-black text-base-content tracking-tight mb-1">
+                  {{ activeCategory() === 'All' ? 'Your Library' : activeCategory() }}
+                </h1>
+                <p class="text-sm text-base-content/50 font-medium italic">
+                  {{ filteredBookmarks().length }} items found
+                </p>
               </div>
-              <h3 class="text-xl font-bold text-base-content/60">No matching bookmarks</h3>
-              <p class="text-sm">Try a different search term or category</p>
+
+              <div class="form-control">
+                <label
+                  class="input input-bordered flex items-center gap-2 focus-within:ring-2 focus-within:ring-primary/20"
+                >
+                  <lucide-icon name="search" class="size-4 opacity-50"></lucide-icon>
+                  <input
+                    type="search"
+                    class="grow border-none focus:ring-0"
+                    placeholder="Search bookmarks..."
+                    [value]="searchQuery()"
+                    (input)="searchQuery.set($any($event.target).value)"
+                  />
+                </label>
+              </div>
             </div>
-          </ng-template>
-        </section>
+          </header>
+
+          <section class="min-h-screen bg-base-300 graph-pattern p-4 lg:p-10">
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+              *ngIf="filteredBookmarks().length > 0; else emptyState"
+            >
+              @for (b of filteredBookmarks(); track b.id) {
+                <app-bookmark-card
+                  [bookmark]="b"
+                  (visit)="onVisit($event)"
+                  (delete)="onDelete($event)"
+                  (copy)="onCopySuccess($event)"
+                />
+              }
+            </div>
+
+            <ng-template #emptyState>
+              <div
+                class="flex flex-col items-center justify-center py-32 bg-base-100/80 backdrop-blur-sm rounded-3xl border-2 border-dashed border-base-300 text-base-content/30"
+              >
+                <div class="bg-base-200 p-6 rounded-full mb-4">
+                  <lucide-icon name="search-x" class="size-12"></lucide-icon>
+                </div>
+                <h3 class="text-xl font-bold text-base-content/60">No matching bookmarks</h3>
+                <p class="text-sm">Try a different search term or category</p>
+              </div>
+            </ng-template>
+          </section>
+        } @else {
+          <app-analytics />
+        }
       </main>
 
       @if (toastMessage()) {
@@ -111,13 +133,22 @@ import { LucideAngularModule } from 'lucide-angular';
     @if (showModal()) {
       <app-add-bookmark-modal (confirm)="onAddBookmark($event)" (cancel)="showModal.set(false)" />
     }
+
+    @if (showCategoryModal()) {
+      <app-add-category-modal
+        (confirm)="onConfirmCategory($event)"
+        (cancel)="showCategoryModal.set(false)"
+      />
+    }
   `,
 })
 export class DashboardComponent {
   readonly svc = inject(BookmarkService);
 
   readonly activeCategory = signal<FilterCategory>('All');
+  readonly currentView = signal<'library' | 'analytics'>('library');
   readonly showModal = signal(false);
+  readonly showCategoryModal = signal(false);
   readonly isDark = signal(true);
   readonly toastMessage = signal<string | null>(null);
   readonly searchQuery = signal('');
@@ -149,6 +180,7 @@ export class DashboardComponent {
 
   setCategory(cat: FilterCategory): void {
     this.activeCategory.set(cat);
+    this.currentView.set('library');
     this.searchQuery.set('');
   }
 
@@ -178,6 +210,41 @@ export class DashboardComponent {
   private showToast(msg: string): void {
     this.toastMessage.set(msg);
     setTimeout(() => this.toastMessage.set(null), 3000);
+  }
+
+  onImportFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      this.svc.importData(content);
+      this.showToast('Import successful!');
+    };
+    reader.readAsText(file);
+    input.value = ''; // Reset for next time
+  }
+
+  onConfirmCategory(name: string): void {
+    this.svc.addCategory(name);
+    this.showCategoryModal.set(false);
+    this.showToast(`Category "${name}" added`);
+  }
+
+  onDeleteCategory(cat: string): void {
+    if (
+      confirm(
+        `Are you sure you want to delete "${cat}"? All bookmarks in this category will be removed.`,
+      )
+    ) {
+      this.svc.deleteCategory(cat);
+      if (this.activeCategory() === cat) {
+        this.activeCategory.set('All');
+      }
+      this.showToast(`Category "${cat}" removed`);
+    }
   }
 
   toggleTheme(): void {
