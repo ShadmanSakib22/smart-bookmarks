@@ -18,11 +18,3 @@
     @apply min-h-screen font-sans;
   }
 }
-
-/* Custom scrollbar using Tailwind utilities if needed, or keep simple */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-base-300 rounded-full;
-}

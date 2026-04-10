@@ -123,7 +123,7 @@ import { AddCategoryModalComponent } from '../components/add-category-modal/add-
           <div
             class="alert bg-neutral text-neutral-content shadow-2xl border-none pr-8 py-4 rounded-2xl min-w-75"
           >
-            <lucide-icon name="check-circle" class="size-5 text-success"></lucide-icon>
+            <lucide-icon name="circle-check-big" class="size-5 text-success"></lucide-icon>
             <span class="font-bold">{{ toastMessage() }}</span>
           </div>
         </div>
