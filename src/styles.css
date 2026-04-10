@@ -1,15 +1,20 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "daisyui" {
-  themes: night, cmyk;
+  themes: light, dark;
 }
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+@utility graph-pattern {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='24' height='24' fill='none' stroke='rgba(100, 100, 100, 0.1)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
 
 @layer base {
-  html, body {
+  html,
+  body {
     @apply min-h-screen font-sans;
   }
 }
@@ -21,4 +26,3 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-base-300 rounded-full;
 }
-
