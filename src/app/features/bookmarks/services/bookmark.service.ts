@@ -5,6 +5,14 @@ import { Bookmark, BookmarkCategory } from '../../../core/models/bookmark.model'
 import { StorageService } from '../../../core/services/storage.service';
 
 const STORAGE_KEY = 'markhub_bookmarks';
+const CATEGORIES_KEY = 'markhub_categories';
+
+const DEFAULT_CATEGORIES = [
+  { label: 'Development', value: 'Development', lucideName: 'code' },
+  { label: 'AI', value: 'AI', lucideName: 'cpu' },
+  { label: 'Social', value: 'Social', lucideName: 'users' },
+  { label: 'Personal', value: 'Personal', lucideName: 'user' },
+];
 
 const SEED_DATA: Bookmark[] = [
   // Development
@@ -379,8 +387,10 @@ const SEED_DATA: Bookmark[] = [
 @Injectable({ providedIn: 'root' })
 export class BookmarkService {
   private readonly _bookmarks = signal<Bookmark[]>([]);
+  private readonly _categories = signal<{ label: string; value: string; lucideName: string }[]>([]);
 
   readonly bookmarks = this._bookmarks.asReadonly();
+  readonly categories = this._categories.asReadonly();
 
   readonly totalVisits = computed(() =>
     this._bookmarks().reduce((sum, b) => sum + b.visitCount, 0),
@@ -416,10 +426,24 @@ export class BookmarkService {
       this._bookmarks.set(SEED_DATA);
       this.persist();
     }
+
+    const storedCats = this.storage.get<{ label: string; value: string; lucideName: string }[]>(
+      CATEGORIES_KEY,
+    );
+    if (storedCats && storedCats.length > 0) {
+      this._categories.set(storedCats);
+    } else {
+      this._categories.set(DEFAULT_CATEGORIES);
+      this.persistCategories();
+    }
   }
 
   private persist(): void {
     this.storage.set(STORAGE_KEY, this._bookmarks());
+  }
+
+  private persistCategories(): void {
+    this.storage.set(CATEGORIES_KEY, this._categories());
   }
 
   trackVisit(id: string): void {
@@ -454,27 +478,59 @@ export class BookmarkService {
   }
 
   exportData(): void {
-    const blob = new Blob([JSON.stringify(this._bookmarks(), null, 2)], {
+    const data = {
+      bookmarks: this._bookmarks(),
+      categories: this._categories(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'markhub-bookmarks.json';
+    a.download = 'markhub-bookmarks-full.json';
     a.click();
     URL.revokeObjectURL(url);
   }
 
   importData(json: string): void {
     try {
-      const parsed = JSON.parse(json) as Bookmark[];
-      this._bookmarks.set(
-        parsed.map((b) => ({ ...b, lastVisited: b.lastVisited ? new Date(b.lastVisited) : null })),
-      );
+      const parsed = JSON.parse(json);
+      if (Array.isArray(parsed)) {
+        // Legacy or simple import
+        this._bookmarks.set(
+          parsed.map((b) => ({ ...b, lastVisited: b.lastVisited ? new Date(b.lastVisited) : null })),
+        );
+      } else if (parsed.bookmarks && parsed.categories) {
+        // New combined format
+        this._bookmarks.set(
+          parsed.bookmarks.map((b: any) => ({
+            ...b,
+            lastVisited: b.lastVisited ? new Date(b.lastVisited) : null,
+          })),
+        );
+        this._categories.set(parsed.categories);
+        this.persistCategories();
+      }
       this.persist();
     } catch {
       console.error('Invalid import data');
     }
+  }
+
+  addCategory(label: string): void {
+    const value = label;
+    if (this._categories().some((c) => c.value === value)) return;
+
+    this._categories.update((prev) => [...prev, { label, value, lucideName: 'folder' }]);
+    this.persistCategories();
+  }
+
+  deleteCategory(value: string): void {
+    this._categories.update((list) => list.filter((c) => c.value !== value));
+    this._bookmarks.update((list) => list.filter((b) => b.category !== value));
+    this.persistCategories();
+    this.persist();
   }
 
   getFaviconUrl(url: string): string {

@@ -1,6 +1,6 @@
 // src/app/core/models/bookmark.model.ts
 
-export type BookmarkCategory = 'Social' | 'Development' | 'AI' | 'Personal';
+export type BookmarkCategory = string;
 
 export interface Bookmark {
   id: string;
