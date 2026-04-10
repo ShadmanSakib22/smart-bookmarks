@@ -13,6 +13,7 @@ import {
 import { LucideAngularModule } from 'lucide-angular';
 import { AnalyticsComponent } from '../analytics/analytics.component';
 import { AddCategoryModalComponent } from '../components/add-category-modal/add-category-modal.component';
+import { DeleteCategoryModalComponent } from '../components/delete-category-modal/delete-category-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,6 +27,7 @@ import { AddCategoryModalComponent } from '../components/add-category-modal/add-
     AddBookmarkModalComponent,
     AnalyticsComponent,
     AddCategoryModalComponent,
+    DeleteCategoryModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -140,6 +142,14 @@ import { AddCategoryModalComponent } from '../components/add-category-modal/add-
         (cancel)="showCategoryModal.set(false)"
       />
     }
+
+    @if (categoryToDelete()) {
+      <app-delete-category-modal
+        [categoryName]="categoryToDelete()!"
+        (confirm)="onConfirmDeleteCategory()"
+        (cancel)="categoryToDelete.set(null)"
+      />
+    }
   `,
 })
 export class DashboardComponent {
@@ -149,6 +159,7 @@ export class DashboardComponent {
   readonly currentView = signal<'library' | 'analytics'>('library');
   readonly showModal = signal(false);
   readonly showCategoryModal = signal(false);
+  readonly categoryToDelete = signal<string | null>(null);
   readonly isDark = signal(true);
   readonly toastMessage = signal<string | null>(null);
   readonly searchQuery = signal('');
@@ -234,15 +245,17 @@ export class DashboardComponent {
   }
 
   onDeleteCategory(cat: string): void {
-    if (
-      confirm(
-        `Are you sure you want to delete "${cat}"? All bookmarks in this category will be removed.`,
-      )
-    ) {
+    this.categoryToDelete.set(cat);
+  }
+
+  onConfirmDeleteCategory(): void {
+    const cat = this.categoryToDelete();
+    if (cat) {
       this.svc.deleteCategory(cat);
       if (this.activeCategory() === cat) {
         this.activeCategory.set('All');
       }
+      this.categoryToDelete.set(null);
       this.showToast(`Category "${cat}" removed`);
     }
   }

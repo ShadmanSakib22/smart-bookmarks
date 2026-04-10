@@ -36,6 +36,7 @@ import {
   Type,
   StarHalf,
   CircleAlert,
+  TriangleAlert,
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -70,6 +71,7 @@ export const appConfig: ApplicationConfig = {
         Upload,
         Folder,
         CircleAlert,
+        TriangleAlert,
         Type,
         StarHalf,
       }),
